@@ -7,7 +7,8 @@ from scrapy import Request
 from JDCrawl.items import JdcrawlItem
 from JDCrawl.utils.common import Common
 from JDCrawl.utils.cookie_utils import Cookie_Utils
-from JDCrawl.utils.db_controller_mysql import MySql_Utils
+from JDCrawl.utils.mysql_manager import MySql_Utils
+from JDCrawl.utils.proxy_utils import Proxy_Utils
 
 
 class GoodsSpider(scrapy.Spider):
@@ -41,6 +42,13 @@ class GoodsSpider(scrapy.Spider):
 
         self.search_word_list = ["面霜","眼镜"]
 
+        # 代理IP工具类
+        self.proxy_utils = Proxy_Utils()
+        print("开始爬取可使用的代理IP。。。\n")
+        self.proxy_utils = Proxy_Utils(test_url="https://item.jd.com/3639988.html", test_headers=None, test_req_type="get")
+        self.proxy_utils.proxy_ip_sp()
+
+
     def start_requests(self):
         '''准备开始爬取首页数据
         :return:
@@ -54,6 +62,10 @@ class GoodsSpider(scrapy.Spider):
             req_headers = copy.deepcopy(self.headers)
             req_headers["Referer"] = req_url
             req_headers["Cookie"] = self.cookie_utils.getCookieByPoll()
+            proxy = self.proxy_utils.getProxyByPoll()
+            if (proxy):
+                meta['proxy'] = proxy
+
             print(f"准备爬取[{keyword}]第[1]页req_url=[{req_url}]的列表信息\n")
             yield Request(url=req_url, method='GET', headers=req_headers, callback=self.pagination_parse, meta=meta,
                           dont_filter=True)
@@ -90,6 +102,9 @@ class GoodsSpider(scrapy.Spider):
             req_headers = copy.deepcopy(self.headers)
             req_headers["Referer"] = req_url
             req_headers["Cookie"] = self.cookie_utils.getCookieByPoll()
+            proxy = self.proxy_utils.getProxyByPoll()
+            if (proxy):
+                meta['proxy'] = proxy
             print(f"准备爬取[{keyword}]第[{page}]页req_url=[{req_url}]的列表信息\n")
             yield Request(url=req_url, method='GET', headers=req_headers, callback=self.pagination_parse, meta=meta,
                           dont_filter=True)
